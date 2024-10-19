@@ -8,13 +8,15 @@ public class Main {
     private static final int YEAR = 1;
     private static final int TEAM_1 = 4;
     private static final int TEAM_2 = 5;
+    private static final int PLAYER_OF_THE_MATCH = 13;
+    private static final int VENUE = 2;
 
     private static final int DELIVERY_MATCH_ID = 0;
     private static final int BOWLER = 8;
     private static final int EXTRA_RUNS = 16;
     private static final int TOTAL_RUNS = 17;
     private static final int Bowling_Team = 3;
-
+    private static final int Wicket = 18;
     public static void main(String[] args) {
         List<Match>matches = getMatchesData();
         List<Delivery>deliveries = getDeliveriesData();
@@ -24,6 +26,12 @@ public class Main {
         findMatchesWonPerTeam(matches);
         findTopTenEconomicalBowlersIn2015(matches, deliveries);
         findTheExtraRunsConcededPerTeamIn2016(matches, deliveries);
+        findThePlayerOfTheMatchInAllMatches2016(matches);
+        findWicketsByEachBowlerIn2016(matches,deliveries);
+        findWicketsByEachBowlerIn2016PerVenuw(matches,deliveries);
+        findBowlerWithWicketsPerVenueInAllYears(matches,deliveries);
+
+
     }
 
     public static List<Match> getMatchesData() {
@@ -39,6 +47,8 @@ public class Main {
                 match.setMatchId(data[MATCH_ID]);
                 match.setTeam1(data[TEAM_1]);
                 match.setTeam2(data[TEAM_2]);
+                match.setPlayerOfTheMatch(data[PLAYER_OF_THE_MATCH]);
+                match.setVenue(data[VENUE]);
                 matches.add(match);
             }
         }
@@ -63,6 +73,11 @@ public class Main {
                 delivery.setValidDelivery(Integer.parseInt(data[EXTRA_RUNS])==0);
                 delivery.setRuns(Integer.parseInt(data[TOTAL_RUNS]));
                 delivery.setBowlingTeam(data[Bowling_Team]);
+                if (data.length > Wicket  && !data[Wicket].trim().isEmpty()) {
+                    delivery.setWicket(true);
+                } else {
+                    delivery.setWicket(false);
+                }
                 deliveries.add(delivery);
             }
             }
@@ -195,5 +210,131 @@ public class Main {
             System.out.println("Team: " + team + " -> Extra Runs: " + extraRunsPerTeam.get(team));
         }
     }
+
+    public static void findThePlayerOfTheMatchInAllMatches2016(List<Match>matches){
+        HashMap<String,String> potm2016 = new HashMap<>();
+        for(Match match:matches){
+            String MatchNo = match.getMatchId();
+            String Potm = match.getPlayerOfTheMatch();
+            String year = match.getYear();
+            if(year.equals("2016")){
+                potm2016.put(MatchNo,Potm);
+            }
+        }
+        System.out.println("Man of the Match in every match of year 2016: ");
+        for(String m: potm2016.keySet()){
+            System.out.println("Match Number:"+" "+m+" "+"Player of the Match:"+" "+potm2016.get(m));
+
+        }
+        System.out.println("--------------");
+    }
+    public static void findWicketsByEachBowlerIn2016(List<Match>matches,List<Delivery>deliveries){
+        Set<String>matchIn2016 = new HashSet<>();
+        for(Match match:matches){
+            if(match.getYear().equals("2016")){
+                matchIn2016.add(match.getMatchId());
+            }
+        }
+        Map<String,Integer>BowlerWickets = new HashMap<>();
+        for(Delivery delivery:deliveries){
+            String bowler = delivery.getBowler();
+            boolean isWicket = delivery.isWicket();
+            if(isWicket){
+                if(BowlerWickets.containsKey(bowler)){
+                    BowlerWickets.put(bowler,BowlerWickets.get(bowler)+1);
+                }
+                else{
+                    BowlerWickets.put(bowler,1);
+                }
+            }
+        }
+        System.out.println("Wickets taken by each bowler in 2016");
+        for(String bowler:BowlerWickets.keySet()){
+            System.out.println("Bowler:"+" "+bowler+" "+BowlerWickets.get(bowler));
+        }
+        System.out.println("-------------");
+    }
+    public static void findWicketsByEachBowlerIn2016PerVenuw(List<Match> matches, List<Delivery> deliveries) {
+        Set<String> matchIds2016 = new HashSet<>();
+        Map<String, String> matchVenueMap = new HashMap<>();
+        for (Match match : matches) {
+            if (match.getYear().equals("2016")) {
+                matchIds2016.add(match.getMatchId());
+                matchVenueMap.put(match.getMatchId(), match.getVenue());
+            }
+        }
+        Map<String, Map<String, Integer>> venueBowlerWickets = new HashMap<>();
+        for (Delivery delivery : deliveries) {
+            String matchId = delivery.getMatchId();
+
+            if (matchIds2016.contains(matchId)) {
+                String venue = matchVenueMap.get(matchId);
+                String bowler = delivery.getBowler();
+                boolean isWicket = delivery.isWicket();
+
+                if (isWicket) {
+                    venueBowlerWickets.putIfAbsent(venue, new HashMap<>());
+                    Map<String, Integer> bowlerWickets = venueBowlerWickets.get(venue);
+                    bowlerWickets.put(bowler, bowlerWickets.getOrDefault(bowler, 0) + 1);
+                }
+            }
+        }
+        System.out.println("Bowler with the most wickets in 2016 at each venue:");
+        for (String venue : venueBowlerWickets.keySet()) {
+            Map<String, Integer> bowlerWickets = venueBowlerWickets.get(venue);
+            String topBowler = null;
+            int maxWickets = 0;
+            for (Map.Entry<String, Integer> entry : bowlerWickets.entrySet()) {
+                String bowler = entry.getKey();
+                int wickets = entry.getValue();
+
+                if (wickets > maxWickets) {
+                    maxWickets = wickets;
+                    topBowler = bowler;
+                }
+            }
+            System.out.println("Venue: " + venue + " -> Bowler: " + topBowler + " with " + maxWickets + " wickets");
+        }
+        System.out.println("---------------");
+    }
+    public static void findBowlerWithWicketsPerVenueInAllYears(List<Match> matches, List<Delivery> deliveries) {
+        Map<String, Map<String, Integer>> venueBowlerWickets = new HashMap<>();
+        Map<String, String> matchVenueMap = new HashMap<>();
+        for (Match match : matches) {
+            matchVenueMap.put(match.getMatchId(), match.getVenue());
+        }
+        for (Delivery delivery : deliveries) {
+            String matchId = delivery.getMatchId();
+            String venue = matchVenueMap.get(matchId);
+            String bowler = delivery.getBowler();
+            boolean isWicket = delivery.isWicket();
+
+            if (isWicket) {
+                venueBowlerWickets.putIfAbsent(venue, new HashMap<>());
+                Map<String, Integer> bowlerWickets = venueBowlerWickets.get(venue);
+                bowlerWickets.put(bowler, bowlerWickets.getOrDefault(bowler, 0) + 1);
+            }
+        }
+        System.out.println("Bowler with the most wickets at each venue (all years):");
+        for (String venue : venueBowlerWickets.keySet()) {
+            Map<String, Integer> bowlerWickets = venueBowlerWickets.get(venue);
+
+            String topBowler = null;
+            int maxWickets = 0;
+            for (Map.Entry<String, Integer> entry : bowlerWickets.entrySet()) {
+                String bowler = entry.getKey();
+                int wickets = entry.getValue();
+
+                if (wickets > maxWickets) {
+                    maxWickets = wickets;
+                    topBowler = bowler;
+                }
+            }
+            System.out.println("Venue: " + venue + " -> Bowler: " + topBowler + " with " + maxWickets + " wickets");
+        }
+    }
 }
+
+
+
 

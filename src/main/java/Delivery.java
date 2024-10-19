@@ -5,6 +5,16 @@ public class Delivery {
     private int runs;
     private boolean validDelivery;
 
+    public boolean isWicket() {
+        return Wicket;
+    }
+
+    public void setWicket(boolean wicket) {
+        Wicket = wicket;
+    }
+
+    private boolean Wicket;
+
     public String getBowlingTeam() {
         return bowlingTeam;
     }
